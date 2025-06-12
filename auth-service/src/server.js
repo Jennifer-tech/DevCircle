@@ -12,7 +12,7 @@ const routes = require('./routes/authRoute')
 const errorHandler = require("./middleware/errorHandler")
 
 const app = express()
-const PORT = process.env.PORT ||3001
+const PORT = process.env.PORT || 3001
 
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -57,7 +57,7 @@ const sensitiveEndpointsLimiter = rateLimit({
         res.status(429).json({ success: false, message: "Too many requests"})
     },
     store: new RedisStore({
-        sendCommand: (...args)=> redisClient.call(...args)
+        sendCommand: (...args)=> redisClient.call(...args),
     })
 })
 
