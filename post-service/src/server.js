@@ -1,13 +1,13 @@
 require('dotenv').config()
 const express = require('express')
 const mongoose = require('mongoose')
-const redis = require('ioredis')
 const cors = require('cors')
 const helmet = require('helmet')
 const postRoutes = require('./routes/postRoutes')
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
 const {createPostLimiter} = require("./middleware/rateLimiters")
+const Redis = require('ioredis')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -28,9 +28,6 @@ app.use((req, res, next) => {
     logger.info(`Request body, ${req.body}`)
     next()
 })
-// in implementing rate limiting for post service, i can be kr hould be able to create 10 posts per minute and a user can access all posts the number they want
-// any route you want to rateLimit, you have to pass it through the 
-app.use('/api/posts/create-post', createPostLimiter)
 
 app.use('/api/posts', (req, res, next) => {
     req.redisClient = redisClient
@@ -40,7 +37,7 @@ app.use('/api/posts', (req, res, next) => {
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-    logger.info(`Identity service running on port ${PORT}`)
+    logger.info(`Post service running on port ${PORT}`)
 })
 
 // Unhandled promise rejection
