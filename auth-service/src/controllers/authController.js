@@ -113,7 +113,6 @@ const refreshTokenUser = async(req, res) => {
         }
 
         const storedToken = await RefreshToken.findOne({token : refreshToken})
-        console.log('storedToken', storedToken)
 
         if(!storedToken || storedToken.expiresAt < new Date()){
             logger.warn("Invalid or expired refresh token")
@@ -125,7 +124,6 @@ const refreshTokenUser = async(req, res) => {
         }
 
         const user = await User.findById(storedToken.user)
-        console.log('user', user)
 
         if(!user){
             logger.warn('User not found')
