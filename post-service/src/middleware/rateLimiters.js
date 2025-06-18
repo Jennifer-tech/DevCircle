@@ -1,6 +1,7 @@
 const {rateLimit} = require('express-rate-limit')
 const {RedisStore} = require('rate-limit-redis')
 const Redis = require('ioredis')
+const logger = require('../utils/logger')
 
 const redisClient = new Redis(process.env.REDIS_URL)
 
@@ -17,7 +18,7 @@ const createPostLimiter = rateLimit({
         sendCommand: (...args)=> redisClient.call(...args),
     })
 })
-const getPostsLimiter = rateLimit({
+const getAllPostLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, //10 minutes
     max: 50,
     standardHeaders: true,
@@ -31,4 +32,4 @@ const getPostsLimiter = rateLimit({
     })
 })
 
-module.exports = {createPostLimiter, getPostsLimiter }
+module.exports = {createPostLimiter, getAllPostLimiter }
