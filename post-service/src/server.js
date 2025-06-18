@@ -6,8 +6,9 @@ const helmet = require('helmet')
 const postRoutes = require('./routes/postRoutes')
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
-const {createPostLimiter} = require("./middleware/rateLimiters")
+const {createPostLimiter, getPostsLimiter} = require("./middleware/rateLimiters")
 const Redis = require('ioredis')
+const { connectToRabbitMQ } = require('./utils/rabbitmq')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
     next()
 })
 
+
 app.use('/api/posts', (req, res, next) => {
     req.redisClient = redisClient
     next()
@@ -36,9 +38,18 @@ app.use('/api/posts', (req, res, next) => {
 
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-    logger.info(`Post service running on port ${PORT}`)
-})
+async function startServer() {
+    try{
+        await connectToRabbitMQ()
+        app.listen(PORT, () => {
+            logger.info(`Post service running on port ${PORT}`)
+        })
+    } catch(error) {
+        logger.error('Failed to connect to server', error)
+        process.exit(1)
+    }
+}
+startServer()
 
 // Unhandled promise rejection
 process.on("unhandledRejection", (reason, promise) => {
