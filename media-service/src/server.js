@@ -7,6 +7,8 @@ const mediaRoutes = require('./routes/mediaRoutes')
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
 const { createMediaLimiter } = require('./middleware/rateLimiter')
+const { connectToRabbitMQ, consumeEvent } = require('./utils/rabbitmq')
+const { handlePostDeleted } = require('./eventHandlers/mediaEventHandlers')
 
 const app = express()
 const PORT = process.env.PORT || 3003
@@ -31,9 +33,21 @@ app.use('api/media/upload', createMediaLimiter)
 app.use('/api/media', mediaRoutes)
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-    logger.info(`Media service running on port ${PORT}`)
-})
+async function startServer() {
+    try{
+        await connectToRabbitMQ()
+
+        // Consume all the events
+        await consumeEvent("post.deleted", handlePostDeleted)
+        app.listen(PORT, () => {
+            logger.info(`Media service running on port ${PORT}`)
+        })
+    } catch(error) {
+        logger.error('Failed to connect to server', error)
+        process.exit(1)
+    }
+}
+startServer()
 
 // Unhandled promise rejection
 process.on("unhandledRejection", (reason, promise) => {
