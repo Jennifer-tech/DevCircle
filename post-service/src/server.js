@@ -8,7 +8,8 @@ const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
 const {createPostLimiter, getPostsLimiter} = require("./middleware/rateLimiters")
 const Redis = require('ioredis')
-const { connectToRabbitMQ } = require('./utils/rabbitmq')
+const { connectToRabbitMQ, consumeEvent } = require('./utils/rabbitmq')
+const { handleCommentDeleted, handleCommentCreated } = require('./eventHandlers/postEventHandler')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -41,6 +42,10 @@ app.use(errorHandler)
 async function startServer() {
     try{
         await connectToRabbitMQ()
+
+        await consumeEvent("post.created", handleCommentCreated)
+        await consumeEvent("comment.deleted", handleCommentDeleted)
+        
         app.listen(PORT, () => {
             logger.info(`Post service running on port ${PORT}`)
         })

@@ -4,7 +4,7 @@ const logger = require('./logger');
 let connection = null;
 let channel = null;
 
-const EXCHANGE_NAME = 'facebook_events'
+const EXCHANGE_NAME = 'post_events'
 
 async function connectToRabbitMQ(){
     try{
@@ -29,4 +29,21 @@ async function publishEvent(routingKey, message) {
     logger.info(`Event Published: ${routingKey}`)
 }
 
-module.exports = { connectToRabbitMQ, publishEvent }
+async function consumeEvent(routingKey, callback) {
+    if(!channel) {
+        await connectToRabbitMQ()
+
+    }
+    const q = await channel.assertExchange('', {exclusive: true});
+    await channel.bindQueue(q.queue, EXCHANGE_NAME, routingKey);
+    channel.consume(q.queue, (msg) => {
+        if(msg !== null) {
+            const content = JSON.parse(msg.content.toString());
+            callback(content);
+            channel.ack(msg)
+        }
+    })
+    logger.info(`Subscribe event: ${routingKey}`)
+}
+
+module.exports = { connectToRabbitMQ, publishEvent, consumeEvent }

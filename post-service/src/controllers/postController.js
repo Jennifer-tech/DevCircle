@@ -143,6 +143,7 @@ const deletePost = async (req, res) => {
     })
 
 
+
     await invalidatePostCache(req, req.params.id)
     logger.info("Post deleted successfully", deletedPost);
     res.status(200).json({
