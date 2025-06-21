@@ -4,7 +4,7 @@ const Redis = require('ioredis')
 
 const redisClient = new Redis(process.env.REDIS_URL)
 
-const createMediaLimiter = rateLimit({
+const createCommentLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, //15 minutes
     max: 25,
     standardHeaders: true,
@@ -18,4 +18,18 @@ const createMediaLimiter = rateLimit({
     })
 })
 
-module.exports = { createMediaLimiter }
+const getAllCommentLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, //10 minutes
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        logger.warn(`Sensitive endpoint rate limit exceeded for IP: ${req.ip}`);
+        res.status(429).json({ success: false, message: "Too many requests"})
+    },
+    store: new RedisStore({
+        sendCommand: (...args)=> redisClient.call(...args),
+    })
+})
+
+module.exports = { createCommentLimiter, getAllCommentLimiter }

@@ -6,8 +6,9 @@ const helmet = require("helmet");
 const commentRoutes = require("./routes/commentRoutes");
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger");
-const { connectToRabbitMQ } = require("./utils/rabbitmq");
+const { connectToRabbitMQ, consumeEvent } = require("./utils/rabbitmq");
 const { handlePostDeleted } = require("./eventHandlers/commentEventHandlers");
+const { default: Redis } = require("ioredis");
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -16,6 +17,8 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => logger.info("Connected to mongodb"))
   .catch((e) => logger.error("Mongoose connection error", e));
+
+const redisClient = new Redis(process.env.REDIS_URL)
 
 app.use(helmet()); //security rules are to come first
 app.use(cors()); //block external requests before your app tries to read their content.
@@ -27,7 +30,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/comments", commentRoutes);
+app.use('/api/comments', (req, res, next) => {
+    req.redisClient = redisClient
+    next()
+}, commentRoutes)
+
 app.use(errorHandler);
 
 async function startServer() {
@@ -36,7 +43,7 @@ async function startServer() {
 
     await consumeEvent("post.deleted", handlePostDeleted);
     app.listen(PORT, () => {
-      logger.info(`Media service running on port ${PORT}`);
+      logger.info(`Comment service running on port ${PORT}`);
     });
   } catch (error) {
     logger.error("Failed to connect to server", error);

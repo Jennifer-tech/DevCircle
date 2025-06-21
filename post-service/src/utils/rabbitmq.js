@@ -34,7 +34,7 @@ async function consumeEvent(routingKey, callback) {
         await connectToRabbitMQ()
 
     }
-    const q = await channel.assertExchange('', {exclusive: true});
+    const q = await channel.assertQueue('', {exclusive: true});
     await channel.bindQueue(q.queue, EXCHANGE_NAME, routingKey);
     channel.consume(q.queue, (msg) => {
         if(msg !== null) {

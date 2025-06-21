@@ -43,9 +43,9 @@ async function startServer() {
     try{
         await connectToRabbitMQ()
 
-        await consumeEvent("post.created", handleCommentCreated)
+        await consumeEvent("comment.created", handleCommentCreated)
         await consumeEvent("comment.deleted", handleCommentDeleted)
-        
+
         app.listen(PORT, () => {
             logger.info(`Post service running on port ${PORT}`)
         })

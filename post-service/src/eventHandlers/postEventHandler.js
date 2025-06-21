@@ -1,4 +1,4 @@
-const Post = require("../models/Post");
+const Post = require("../models/postModel");
 const logger = require("../utils/logger");
 
 const handleCommentCreated = async (event) => {
@@ -20,6 +20,8 @@ const handleCommentCreated = async (event) => {
     }
     // Add the comment ID to the post's comments array
     post.comments.push(commentId);
+
+    await post.save()
   } catch (e) {
     logger.error(e, "Error occured while adding comment from post");
   }
