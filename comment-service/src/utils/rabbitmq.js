@@ -4,7 +4,7 @@ const logger = require('./logger');
 let connection = null;
 let channel = null;
 
-const EXCHANGE_NAME = 'search_events'
+const EXCHANGE_NAME = 'post_events'
 
 async function connectToRabbitMQ(){
     try{
@@ -18,6 +18,15 @@ async function connectToRabbitMQ(){
     } catch(e) {
         logger.error('Error connecting to RabbitMQ:', e)
     }
+}
+
+async function publishEvent(routingKey, message) {
+    if(!channel) {
+        await connectToRabbitMQ()
+    }
+
+    channel.publish(EXCHANGE_NAME, routingKey, Buffer.from(JSON.stringify(message)))
+    logger.info(`Event Published: ${routingKey}`)
 }
 
 async function consumeEvent(routingKey, callback) {
@@ -37,4 +46,4 @@ async function consumeEvent(routingKey, callback) {
     logger.info(`Subscribed to event: ${routingKey}`)
 }
 
-module.exports = { connectToRabbitMQ, consumeEvent }
+module.exports = { connectToRabbitMQ, publishEvent, consumeEvent }
