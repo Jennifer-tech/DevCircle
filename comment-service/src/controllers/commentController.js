@@ -28,19 +28,20 @@ const createComment = async (req, res) => {
     }
 
     const { content, postId } = req.body;
-    const newlyCreatedComment = new Comment({
-      user: req.user.userId,
-      content,
-      postId,
-    });
-
-    await newlyCreatedComment.save();
-
     // Extracting mentions
     const mentionedUsernames = [...content.matchAll(/@(\w+)/g)].map(match => match[1])
     console.log("mentionedUsernames", mentionedUsernames);
 
-    for(const username of mentions) {
+    const newlyCreatedComment = new Comment({
+      user: req.user.userId,
+      content,
+      postId,
+      // mentions: mentionedUsernames
+    });
+
+    await newlyCreatedComment.save();
+
+    for(const username of mentionedUsernames) {
       await publishEvent('user.mentioned', {
         mentionedUsername: username,
         mentionedByUserId: req.user.userId,
@@ -61,6 +62,7 @@ const createComment = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Comment created successfully",
+      comment: newlyCreatedComment
     });
   } catch (e) {
     logger.error("Error creating comment", e);

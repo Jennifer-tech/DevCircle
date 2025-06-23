@@ -1,19 +1,22 @@
 const Post = require("../models/postModel");
 const logger = require("../utils/logger");
 const { publishEvent } = require("../utils/rabbitmq");
-const { validateCreatePost } = require("../utils/validation");
+const {
+  validateCreatePost,
+  validateUpdatePost,
+} = require("../utils/validation");
 
 async function invalidatePostCache(req, input) {
-    const cacheKey = `post:${input}`;
-    await req.redisClient.del(cacheKey)
-    const keys = await req.redisClient.keys("posts:*")
-    if(keys.length > 0) {
-        await req.redisClient.del(keys)
-    }
+  const cacheKey = `post:${input}`;
+  await req.redisClient.del(cacheKey);
+  const keys = await req.redisClient.keys("posts:*");
+  if (keys.length > 0) {
+    await req.redisClient.del(keys);
+  }
 }
 
 const createPost = async (req, res) => {
-    logger.info("Create post endpoint hit")
+  logger.info("Create post endpoint hit");
   try {
     const { error } = validateCreatePost(req.body);
     if (error) {
@@ -31,14 +34,14 @@ const createPost = async (req, res) => {
     });
 
     await newlyCreatedPost.save();
-    await publishEvent('post.created', {
+    await publishEvent("post.created", {
       postId: newlyCreatedPost._id.toString(),
       userId: newlyCreatedPost.user.toString(),
       content: newlyCreatedPost.content,
       createdAt: newlyCreatedPost.createdAt,
-    })
+    });
 
-    await invalidatePostCache(req, newlyCreatedPost._id.toString())
+    await invalidatePostCache(req, newlyCreatedPost._id.toString());
     logger.info("Post created successfully", newlyCreatedPost);
     res.status(201).json({
       success: true,
@@ -57,30 +60,33 @@ const getAllPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const startIndex = (page - 1) * limit
+    const startIndex = (page - 1) * limit;
 
     const cacheKey = `posts:${page}:${limit}`;
     const cachedPosts = await req.redisClient.get(cacheKey);
 
-    if(cachedPosts) {
-        return res.json(JSON.parse(cachedPosts));
+    if (cachedPosts) {
+      return res.json(JSON.parse(cachedPosts));
     }
 
-    const posts = await Post.find({}).sort({ createdAt: -1}).skip(startIndex).limit(limit)
+    const posts = await Post.find({})
+      .sort({ createdAt: -1 })
+      .skip(startIndex)
+      .limit(limit);
 
     const totalNoOfPosts = await Post.countDocuments();
 
     const result = {
-        posts,
-        currentPage: page,
-        totalPages: Math.ceil(totalNoOfPosts / limit),
-        totalPosts: totalNoOfPosts
-    }
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(totalNoOfPosts / limit),
+      totalPosts: totalNoOfPosts,
+    };
 
     // save your posts in redis cache
-    await req.redisClient.setex(cacheKey, 300, JSON.stringify(result))
+    await req.redisClient.setex(cacheKey, 300, JSON.stringify(result));
 
-    res.json(result)
+    res.json(result);
   } catch (e) {
     logger.error("Error fetching posts", e);
     res.status(500).json({
@@ -93,22 +99,26 @@ const getAllPosts = async (req, res) => {
 const getPost = async (req, res) => {
   try {
     const postId = req.params.id;
-    const cachekey = `post: ${postId}`
+    const cachekey = `post: ${postId}`;
     const cachedPost = await req.redisClient.get(cachekey);
 
     if (cachedPost) {
       return res.json(JSON.parse(cachedPost));
     }
 
-    const singlePostDetailsById = await Post.findById(postId)
-    
-    if(!singlePostDetailsById) {
+    const singlePostDetailsById = await Post.findById(postId);
+
+    if (!singlePostDetailsById) {
       return res.status(404).json({
         success: false,
         message: "Post not found",
       });
     }
-    await req.redisClient.setex(cachedPost, 3600, JSON.stringify(singlePostDetailsById))
+    await req.redisClient.setex(
+      cachedPost,
+      3600,
+      JSON.stringify(singlePostDetailsById)
+    );
 
     res.json(singlePostDetailsById);
   } catch (e) {
@@ -120,13 +130,64 @@ const getPost = async (req, res) => {
   }
 };
 
+const updatePost = async (req, res) => {
+  logger.info("Update Post endpoint hit");
+
+  try {
+    const postId = req.params.id;
+    const userId = req.user.userId;
+
+    const { error } = validateUpdatePost(req.body);
+
+    if (error) {
+      logger.warn("Validation error", error.details[0].message);
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    if (post.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update this post",
+      });
+    }
+    const { content } = req.body;
+    post.content = content;
+    await post.save();
+
+    await invalidatePostCache(req, postId);
+    logger.info("Post updated successfully", post);
+    res.json({
+      success: true,
+      message: "Post updated successfully",
+      post,
+    });
+  } catch (e) {
+    logger.error("Error updating post", e);
+    res.status(500).json({
+      success: false,
+      message: "Error updating post",
+    });
+  }
+};
+
 const deletePost = async (req, res) => {
-    logger.info("Delete post endpoint hit")
+  logger.info("Delete post endpoint hit");
 
   try {
     const deletedPost = await Post.findByIdAndDelete({
-        _id: req.params.id,
-        user: req.user.userId
+      _id: req.params.id,
+      user: req.user.userId,
     });
     if (!deletedPost) {
       return res.status(404).json({
@@ -140,11 +201,9 @@ const deletePost = async (req, res) => {
       postId: deletedPost._id,
       userId: req.user.userId,
       mediaIds: deletedPost.mediaIds,
-    })
+    });
 
-
-
-    await invalidatePostCache(req, req.params.id)
+    await invalidatePostCache(req, req.params.id);
     logger.info("Post deleted successfully", deletedPost);
     res.status(200).json({
       success: true,
@@ -158,4 +217,4 @@ const deletePost = async (req, res) => {
     });
   }
 };
-module.exports = { createPost, getAllPosts, getPost, deletePost };
+module.exports = { createPost, getAllPosts, getPost, deletePost, updatePost };

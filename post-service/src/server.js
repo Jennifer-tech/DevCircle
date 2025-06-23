@@ -6,7 +6,6 @@ const helmet = require('helmet')
 const postRoutes = require('./routes/postRoutes')
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
-const {createPostLimiter, getPostsLimiter} = require("./middleware/rateLimiters")
 const Redis = require('ioredis')
 const { connectToRabbitMQ, consumeEvent } = require('./utils/rabbitmq')
 const { handleCommentDeleted, handleCommentCreated } = require('./eventHandlers/postEventHandler')
