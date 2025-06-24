@@ -17,4 +17,7 @@ router.patch('/:id', updatePost)
 router.post('/like', likePost);
 router.get('/:postId/likes', getTotalPostLikes);
 
+router.post('/share', likePost);
+router.get('/:postId/shares', getTotalPostLikes);
+
 module.exports = router

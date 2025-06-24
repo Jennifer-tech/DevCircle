@@ -7,7 +7,7 @@ const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
 const Redis = require('ioredis')
 const { connectToRabbitMQ, consumeEvent } = require('./utils/rabbitmq')
-const { handleMentionNotification } = require('./eventHandlers/notificationEventHandler')
+const { handleMentionNotification, handleCommentNotification, handlePostLikedNotification } = require('./eventHandlers/notificationEventHandler')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -36,6 +36,8 @@ async function startServer() {
         await connectToRabbitMQ()
 
         await consumeEvent("notification.mention", handleMentionNotification)
+        await consumeEvent("comment.created.notification", handleCommentNotification)
+        await consumeEvent("post.like.notification", handlePostLikedNotification)
         // await consumeEvent("comment.deleted", handleCommentDeleted)
 
         app.listen(PORT, () => {
