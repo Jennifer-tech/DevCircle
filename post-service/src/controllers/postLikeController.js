@@ -1,6 +1,7 @@
 const PostLike = require("../models/postLikeModel");
 const Post = require("../models/postModel");
 const logger = require("../utils/logger");
+const { publishEvent } = require("../utils/rabbitmq");
 
 const likePost = async (req, res) => {
   logger.info("Like post endpoint hit");
@@ -21,9 +22,24 @@ const likePost = async (req, res) => {
       });
       await newLike.save();
 
+      const post = await Post.findById(postId);
+      if (!post) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Post not found" });
+      }
+      const postOwnerId = post.user.toString();
+      console.log('postOwnerId', postOwnerId)
+
+      await publishEvent("post.liked", {
+        userId,
+        postId,
+        postOwnerId
+      });
+
       await Post.findByIdAndUpdate(postId, {
-        $addToSet: { likes: newLike._id}
-      })
+        $addToSet: { likes: newLike._id },
+      });
       logger.info(`Post liked by user: ${userId} for post: ${postId}`);
       return res.status(201).json({
         success: true,
@@ -38,8 +54,8 @@ const likePost = async (req, res) => {
     });
 
     await Post.findByIdAndUpdate(postId, {
-        $pull: { likes: existingLike._id}
-    })
+      $pull: { likes: existingLike._id },
+    });
     logger.info(`Post unliked by user: ${userId} for post: ${postId}`);
     return res.status(200).json({
       success: true,

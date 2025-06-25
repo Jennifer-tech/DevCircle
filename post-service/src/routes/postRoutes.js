@@ -1,5 +1,5 @@
 const express = require('express')
-const {createPost, getAllPosts, getPost, deletePost} = require('../controllers/postController')
+const {createPost, getAllPosts, getPost, deletePost, updatePost} = require('../controllers/postController')
 const {authenticateRequest} = require('../middleware/authMiddleware')
 const { createPostLimiter, getAllPostLimiter } = require('../middleware/rateLimiters')
 const { likePost, getTotalPostLikes } = require('../controllers/postLikeController')
@@ -12,8 +12,12 @@ router.post('/create-post', createPostLimiter, createPost)
 router.get('/all-posts', getAllPostLimiter, getAllPosts)
 router.get('/:id', getPost)
 router.delete('/:id', deletePost)
+router.patch('/:id', updatePost)
 
 router.post('/like', likePost);
 router.get('/:postId/likes', getTotalPostLikes);
+
+router.post('/share', likePost);
+router.get('/:postId/shares', getTotalPostLikes);
 
 module.exports = router

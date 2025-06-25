@@ -2,7 +2,10 @@ const User = require("../../../auth-service/src/models/User");
 const Comment = require("../models/commentModel");
 const logger = require("../utils/logger");
 const { publishEvent } = require("../utils/rabbitmq");
-const { validateCreateComment, validateUpdateComment } = require("../utils/validation");
+const {
+  validateCreateComment,
+  validateUpdateComment,
+} = require("../utils/validation");
 
 async function invalidateCommentCache(req, input) {
   const cacheKey = `comment:${input}`;
@@ -28,30 +31,39 @@ const createComment = async (req, res) => {
     }
 
     const { content, postId } = req.body;
+    const userId = req.user.userId;
+    // Extracting mentions
+    const mentionedUsernames = [...content.matchAll(/@(\w+)/g)].map(
+      (match) => match[1]
+    );
+    console.log("mentionedUsernames", mentionedUsernames);
+
     const newlyCreatedComment = new Comment({
-      user: req.user.userId,
+      user: userId,
       content,
       postId,
+      // mentions: mentionedUsernames
     });
 
     await newlyCreatedComment.save();
 
-    // Extracting mentions
-    const mentionedUsernames = [...content.matchAll(/@(\w+)/g)].map(match => match[1])
-    console.log("mentionedUsernames", mentionedUsernames);
-
-    for(const username of mentions) {
-      await publishEvent('user.mentioned', {
-        mentionedUsername: username,
-        mentionedByUserId: req.user.userId,
-        postId,
-        commentId: newlyCreatedComment._id.toString(),
-        content: newlyCreatedComment.content,
-      })
+    if (mentionedUsernames.length > 0) {
+      for (const username of mentionedUsernames) {
+        if (!username) continue;
+        await publishEvent("user.mentioned", {
+          mentionedUsername: username,
+          mentionedByUserId: userId,
+          postId,
+          commentId: newlyCreatedComment._id.toString(),
+          content: newlyCreatedComment.content,
+        });
+      }
+    } else {
+      logger.info("No user mentions found in comment, skipping mention event.");
     }
     await publishEvent("comment.created", {
       commentId: newlyCreatedComment._id.toString(),
-      userId: newlyCreatedComment.user.toString(),
+      userId: userId,
       content: newlyCreatedComment.content,
       postId: newlyCreatedComment.postId.toString(),
       createdAt: newlyCreatedComment.createdAt,
@@ -61,6 +73,7 @@ const createComment = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Comment created successfully",
+      comment: newlyCreatedComment,
     });
   } catch (e) {
     logger.error("Error creating comment", e);
@@ -147,7 +160,7 @@ const getComment = async (req, res) => {
 };
 
 const updateComment = async (req, res) => {
-  logger.info("Update comment endpoint hit")
+  logger.info("Update comment endpoint hit");
   try {
     const commentId = req.params.id;
     const userId = req.user.userId;
@@ -192,7 +205,7 @@ const updateComment = async (req, res) => {
       message: "Error creating comment",
     });
   }
-}
+};
 
 const deleteComment = async (req, res) => {
   logger.info("Delete comment endpoint hit");

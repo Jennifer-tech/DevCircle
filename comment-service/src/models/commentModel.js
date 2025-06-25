@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const commentSchema = new mongoose.Schema({
     postId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
         required: true,
     },
     user: {
@@ -13,12 +14,12 @@ const commentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    // mentions: [String],
     createdAt: {
         type: Date,
         default: Date.now,
         required: true
     },
-    mentions: [String],
 }, {timestamps: true})
 
 const Comment = mongoose.model('Comment', commentSchema);
