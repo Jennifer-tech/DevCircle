@@ -27,6 +27,12 @@ const postSchema = new mongoose.Schema({
             ref: "postLike"
         }
     ],
+    shares: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "postShare"
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now

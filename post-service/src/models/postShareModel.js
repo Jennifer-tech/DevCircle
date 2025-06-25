@@ -15,6 +15,5 @@ const postShareSchema = new mongoose.Schema({
         default: Date.now
     }
 }, { timestamps: true });
-postShareSchema.index({postId: 1, userId: 1}, { unique: true});
 const PostShare = mongoose.model('PostShare', postShareSchema);
 module.exports = PostShare;
