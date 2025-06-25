@@ -3,6 +3,7 @@ const {createPost, getAllPosts, getPost, deletePost, updatePost} = require('../c
 const {authenticateRequest} = require('../middleware/authMiddleware')
 const { createPostLimiter, getAllPostLimiter } = require('../middleware/rateLimiters')
 const { likePost, getTotalPostLikes } = require('../controllers/postLikeController')
+const { sharePost, getTotalPostShares } = require('../controllers/postShareController')
 
 const router = express.Router()
 
@@ -17,7 +18,7 @@ router.patch('/:id', updatePost)
 router.post('/like', likePost);
 router.get('/:postId/likes', getTotalPostLikes);
 
-router.post('/share', likePost);
-router.get('/:postId/shares', getTotalPostLikes);
+router.post('/share', sharePost);
+router.get('/:postId/shares', getTotalPostShares);
 
 module.exports = router

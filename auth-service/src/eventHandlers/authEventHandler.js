@@ -97,4 +97,35 @@ const handlePostLikedEvent = async (event) => {
   });
 };
 
-module.exports = { handleMentionEvent, handleCommentEvent, handlePostLikedEvent };
+const handlePostSharedEvent = async (event) => {
+    console.log('postSharedEvent', event)
+  const { userId, postId, postOwnerId } = event;
+  const cacheKey = `user:${userId}`;
+
+  let userData = await redisClient.get(cacheKey);
+  console.log("userData", userData);
+  if (!userData) {
+    const user = await User.findOne({ _id: userId });
+    console.log("user", user);
+    if (!user) {
+      logger.warn(`UserId not found`);
+      return;
+    }
+
+    userData = { email: user.email, username: user.username };
+    console.log("userData2", userData);
+    await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
+  } else {
+    userData = JSON.parse(userData);
+    console.log("userData3", userData);
+  }
+  await publishEvent("post.share.notification", {
+    postId,
+    postOwnerId,
+    sharerId: userId,
+    sharerUserEmail: userData.email,
+    sharerUserName: userData.username,
+  });
+};
+
+module.exports = { handleMentionEvent, handleCommentEvent, handlePostLikedEvent, handlePostSharedEvent };

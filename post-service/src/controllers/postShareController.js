@@ -25,7 +25,7 @@ const sharePost = async (req, res) => {
     const postOwnerId = post.user.toString();
     console.log("postOwnerId", postOwnerId);
 
-    await publishEvent("post.liked", {
+    await publishEvent("post.shared", {
       userId,
       postId,
       postOwnerId,

@@ -108,5 +108,30 @@ const handlePostLikedNotification = async (event) => {
     throw err;
   }
 };
+const handlePostSharedNotification = async (event) => {
+  try {
+    logger.info("Received post shared notification event:", event);
+    const {
+      postId,
+      postOwnerId,
+      sharerUserName
+    } = event;
 
-module.exports = { handleMentionNotification, handleCommentNotification, handlePostLikedNotification };
+    const message = `${sharerUserName} shared your post`;
+    const notification = new Notification({
+      userId: postOwnerId,
+      type: "share",
+      message,
+      metadata: {
+        postId,
+      },
+    });
+    await notification.save();
+    logger.info(`Share notification saved for post ${postId}`);
+  } catch (err) {
+    logger.error("Error in handlePostSharedNotification:", err);
+    throw err;
+  }
+};
+
+module.exports = { handleMentionNotification, handleCommentNotification, handlePostLikedNotification, handlePostSharedNotification };
