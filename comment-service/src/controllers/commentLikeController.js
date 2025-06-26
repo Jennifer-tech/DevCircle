@@ -7,14 +7,12 @@ const likeComment = async (req, res) => {
 
     try{
         const userId = req.user.userId;
-        console.log("userId", userId);
         const { commentId } = req.body;
 
         const existingLike = await CommentLike.findOne({
             userId,
             commentId
         })
-        console.log("existingLike", existingLike);
 
         if(!existingLike) {
             const newLike = new CommentLike({

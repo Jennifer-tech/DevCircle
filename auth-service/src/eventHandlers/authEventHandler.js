@@ -8,8 +8,6 @@ const redisClient = new Redis(process.env.REDIS_URL);
 const handleMentionEvent = async (event) => {
   const { mentionedUsername, ...rest } = event;
 
-  console.log('mentionedUsername', mentionedUsername)
-
   if (!mentionedUsername) {
     logger.warn("Mention event received without mentionedUsername, skipping.");
     return;
@@ -20,13 +18,17 @@ const handleMentionEvent = async (event) => {
   let userData = await redisClient.get(cacheKey);
   if (!userData) {
     const user = await User.findOne({ username: mentionedUsername });
-    console.log("user", user);
+    
     if (!user) {
       logger.warn(`User @${mentionedUsername} not found`);
       return;
     }
 
-    userData = { id: user._id.toString(), email: user.email, username: user.username };
+    userData = {
+      id: user._id.toString(),
+      email: user.email,
+      username: user.username,
+    };
     await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
   } else {
     userData = JSON.parse(userData);
@@ -44,16 +46,20 @@ const handleCommentEvent = async (event) => {
   const cacheKey = `user:${userId}`;
 
   let userData = await redisClient.get(cacheKey);
-  console.log("userData", userData);
+  
   if (!userData) {
     const user = await User.findOne({ _id: userId });
-    console.log("user", user);
+    
     if (!user) {
       logger.warn(`UserId not found`);
       return;
     }
 
-    userData = { id: user._id.toString(), email: user.email, username: user.username };
+    userData = {
+      id: user._id.toString(),
+      email: user.email,
+      username: user.username,
+    };
     await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
   } else {
     userData = JSON.parse(userData);
@@ -67,26 +73,26 @@ const handleCommentEvent = async (event) => {
 };
 
 const handlePostLikedEvent = async (event) => {
-    console.log('postLikedEvent', event)
+  
   const { userId, postId, postOwnerId } = event;
   const cacheKey = `user:${userId}`;
 
   let userData = await redisClient.get(cacheKey);
-  console.log("userData", userData);
+  
   if (!userData) {
     const user = await User.findOne({ _id: userId });
-    console.log("user", user);
+ 
     if (!user) {
       logger.warn(`UserId not found`);
       return;
     }
 
     userData = { email: user.email, username: user.username };
-    console.log("userData2", userData);
+    
     await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
   } else {
     userData = JSON.parse(userData);
-    console.log("userData3", userData);
+    
   }
   await publishEvent("post.like.notification", {
     postId,
@@ -98,26 +104,26 @@ const handlePostLikedEvent = async (event) => {
 };
 
 const handlePostSharedEvent = async (event) => {
-    console.log('postSharedEvent', event)
+  
   const { userId, postId, postOwnerId } = event;
   const cacheKey = `user:${userId}`;
 
   let userData = await redisClient.get(cacheKey);
-  console.log("userData", userData);
+  
   if (!userData) {
     const user = await User.findOne({ _id: userId });
-    console.log("user", user);
+    
     if (!user) {
       logger.warn(`UserId not found`);
       return;
     }
 
     userData = { email: user.email, username: user.username };
-    console.log("userData2", userData);
+    
     await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
   } else {
     userData = JSON.parse(userData);
-    console.log("userData3", userData);
+    
   }
   await publishEvent("post.share.notification", {
     postId,
@@ -128,4 +134,38 @@ const handlePostSharedEvent = async (event) => {
   });
 };
 
-module.exports = { handleMentionEvent, handleCommentEvent, handlePostLikedEvent, handlePostSharedEvent };
+const getUserInfoEvent = async (event) => {
+  try {
+    const { userId } = event;
+
+    const cacheKey = `user:${userId}`;
+    let userData = await redisClient.get(cacheKey);
+ 
+    if (!userData) {
+      const user = await User.findOne({ _id: userId });
+
+      if (!user) {
+        logger.warn(`UserId not found`);
+        return;
+      }
+
+      userData = { email: user.email, username: user.username };
+
+      await redisClient.set(cacheKey, JSON.stringify(userData), "EX", 3600);
+    } else {
+      userData = JSON.parse(userData);
+    }
+    return userData;
+  } catch (err) {
+    logger.error("Error in getUserInfoEvent:", err);
+    throw err;
+  }
+};
+
+module.exports = {
+  handleMentionEvent,
+  handleCommentEvent,
+  handlePostLikedEvent,
+  handlePostSharedEvent,
+  getUserInfoEvent,
+};

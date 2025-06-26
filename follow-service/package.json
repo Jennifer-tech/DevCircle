@@ -1,7 +1,7 @@
 {
-  "name": "notification-service",
+  "name": "follow-service",
   "version": "1.0.0",
-  "main": "src/server.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/server.js",
@@ -22,9 +22,7 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.2",
-    "nodemailer": "^7.0.3",
     "rate-limit-redis": "^4.2.1",
-    "uuid": "^11.1.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
