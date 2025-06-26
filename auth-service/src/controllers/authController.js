@@ -147,6 +147,35 @@ const refreshTokenUser = async(req, res) => {
     }
 }
 
+// const updateProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+//     const { username, email, profile } = req.body;
+
+//     const updated = await User.findByIdAndUpdate(
+//       userId,
+//       { username, email, profile },
+//       { new: true }
+//     );
+
+//     // Invalidate cache
+//     await redisClient.del(`user:${userId}`);
+
+//     res.json({
+//       success: true,
+//       message: 'Profile updated',
+//       user: {
+//         username: updated.username,
+//         email: updated.email,
+//         profile: updated.profile
+//       }
+//     });
+//   } catch (e) {
+//     logger.error('Error updating profile', e);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
 //logout
 const logoutUser = async(req, res) => {
     logger.info("logout endpoint hit")

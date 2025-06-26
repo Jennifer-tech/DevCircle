@@ -6,8 +6,8 @@ const helmet = require('helmet')
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger")
 const Redis = require('ioredis')
-const { connectToRabbitMQ, consumeEvent } = require('./utils/rabbitmq')
-const { handleMentionNotification, handleCommentNotification, handlePostLikedNotification, handlePostSharedNotification, handleUserFollowed } = require('./eventHandlers/notificationEventHandler')
+const followRoutes = require("./routes/followRoute");
+const { connectToRabbitMQ } = require('./utils/rabbitmq')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -29,21 +29,19 @@ app.use((req, res, next) => {
     next()
 })
 
+app.use("/api/follow", (req, res, next) => {
+    req.redisClient = redisClient
+    next()
+}, followRoutes);
+
 app.use(errorHandler)
 
 async function startServer() {
     try{
         await connectToRabbitMQ()
 
-        await consumeEvent("notification.mention", handleMentionNotification)
-        await consumeEvent("comment.created.notification", handleCommentNotification)
-        await consumeEvent("post.like.notification", handlePostLikedNotification)
-        await consumeEvent("post.share.notification", handlePostSharedNotification)
-        await consumeEvent("user.followed", handleUserFollowed)
-        // await consumeEvent("comment.deleted", handleCommentDeleted)
-
         app.listen(PORT, () => {
-            logger.info(`Notification service running on port ${PORT}`)
+            logger.info(`Follow service running on port ${PORT}`)
         })
     } catch(error) {
         logger.error('Failed to connect to server', error)
@@ -54,12 +52,9 @@ startServer()
 
 // Unhandled promise rejection
 process.on("unhandledRejection", (reason, promise) => {
-    // logger.error('Unhandled Rejection at', promise, 'reason:', reason)
-    const isError = reason instanceof Error;
-
-  logger.error("Unhandled Promise Rejection", {
-    reason: isError ? reason.message : String(reason),
-    stack: isError ? reason.stack : null,
-    promise,
-  });
+    if (reason instanceof Error) {
+    logger.error('Unhandled Rejection:', reason.stack || reason.message);
+  } else {
+    logger.error('Unhandled Rejection (non-error):', JSON.stringify(reason));
+  }
 })

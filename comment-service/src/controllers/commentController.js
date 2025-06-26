@@ -36,7 +36,7 @@ const createComment = async (req, res) => {
     const mentionedUsernames = [...content.matchAll(/@(\w+)/g)].map(
       (match) => match[1]
     );
-    console.log("mentionedUsernames", mentionedUsernames);
+    
 
     const newlyCreatedComment = new Comment({
       user: userId,
@@ -126,9 +126,8 @@ const getComment = async (req, res) => {
   try {
     const commentId = req.params.id;
     const cachekey = `comment: ${commentId}`;
-    console.log("cachekey", cachekey);
+    
     const cachedComment = await req.redisClient.get(cachekey);
-    console.log("cachedComment", cachedComment);
 
     if (cachedComment) {
       return res.json(JSON.parse(cachedComment));

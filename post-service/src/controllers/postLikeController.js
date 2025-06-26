@@ -29,7 +29,6 @@ const likePost = async (req, res) => {
           .json({ success: false, message: "Post not found" });
       }
       const postOwnerId = post.user.toString();
-      console.log('postOwnerId', postOwnerId)
 
       await publishEvent("post.liked", {
         userId,

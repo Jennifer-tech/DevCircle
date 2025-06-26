@@ -28,6 +28,7 @@
     "mongoose": "^8.15.1",
     "rate-limit-redis": "^4.2.1",
     "rate-limiter-flexible": "^7.1.1",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0"
   }
 }

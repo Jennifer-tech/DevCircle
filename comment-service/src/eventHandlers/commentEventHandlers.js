@@ -2,7 +2,6 @@ const Comment = require("../models/commentModel");
 const logger = require("../utils/logger");
 
 const handlePostDeleted = async (event) => {
-  console.log(event, "eventeventevent2");
 
   const { postId, commentIds } = event;
 

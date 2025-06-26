@@ -2,7 +2,6 @@ const Post = require("../models/postModel");
 const logger = require("../utils/logger");
 
 const handleCommentCreated = async (event) => {
-  console.log(event, "eventeventevent3");
 
   const { postId, commentId } = event;
   try {
@@ -27,7 +26,6 @@ const handleCommentCreated = async (event) => {
   }
 }
 const handleCommentDeleted = async (event) => {
-  console.log(event, "eventeventevent4");
 
   const { postId, commentId } = event;
   try {

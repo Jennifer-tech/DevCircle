@@ -10,8 +10,8 @@ const { rateLimit } = require("express-rate-limit");
 const { RedisStore } = require("rate-limit-redis");
 const routes = require("./routes/authRoute");
 const errorHandler = require("./middleware/errorHandler");
-const { connectToRabbitMQ, consumeEvent } = require("./utils/rabbitmq");
-const { handleMentionEvent, handleCommentEvent, handlePostLikedEvent, handlePostSharedEvent } = require("./eventHandlers/authEventHandler");
+const { connectToRabbitMQ, consumeEvent, consumeRpc } = require("./utils/rabbitmq");
+const { handleMentionEvent, handleCommentEvent, handlePostLikedEvent, handlePostSharedEvent, getUserInfoEvent } = require("./eventHandlers/authEventHandler");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -80,6 +80,7 @@ async function startServer() {
     await consumeEvent("comment.created", handleCommentEvent);
     await consumeEvent('post.liked', handlePostLikedEvent)
     await consumeEvent('post.shared', handlePostSharedEvent)
+    await consumeRpc('user.getInfo', getUserInfoEvent)
     app.listen(PORT, () => {
       logger.info(`Auth service running on port ${PORT}`);
     });

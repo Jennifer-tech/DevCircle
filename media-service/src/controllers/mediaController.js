@@ -5,7 +5,6 @@ const Media = require('../models/mediaModel')
 const uploadMedia = async(req, res) => {
     logger.info('Starting media upload')
     try{
-        console.log('req.file', req.file)
         if(!req.file) {
             logger.error('No file added. Please add a file and try again')
             return res.status(400).json({

@@ -1,5 +1,6 @@
 const Notification = require("../model/notificationModel");
 const logger = require("../utils/logger");
+const { publishEvent, publishRpcEvent } = require("../utils/rabbitmq");
 const sendEmail = require("../utils/sendEmail");
 
 const handleMentionNotification = async (event) => {
@@ -13,7 +14,6 @@ const handleMentionNotification = async (event) => {
       commentId,
       content,
     } = event;
-    console.log('mentionedUserId', mentionedUserId)
 
     if (!mentionedUserId || !mentionedUserEmail) {
       logger.error("Mention notification received without valid user info.");
@@ -86,11 +86,7 @@ const handleCommentNotification = async (event) => {
 const handlePostLikedNotification = async (event) => {
   try {
     logger.info("Received like notification event:", event);
-    const {
-      postId,
-      postOwnerId,
-      likerUserName
-    } = event;
+    const { postId, postOwnerId, likerUserName } = event;
 
     const message = `${likerUserName} liked your post`;
     const notification = new Notification({
@@ -111,11 +107,7 @@ const handlePostLikedNotification = async (event) => {
 const handlePostSharedNotification = async (event) => {
   try {
     logger.info("Received post shared notification event:", event);
-    const {
-      postId,
-      postOwnerId,
-      sharerUserName
-    } = event;
+    const { postId, postOwnerId, sharerUserName } = event;
 
     const message = `${sharerUserName} shared your post`;
     const notification = new Notification({
@@ -134,4 +126,38 @@ const handlePostSharedNotification = async (event) => {
   }
 };
 
-module.exports = { handleMentionNotification, handleCommentNotification, handlePostLikedNotification, handlePostSharedNotification };
+const handleUserFollowed = async (event) => {
+  const { followerId, followingId } = event;
+
+  const followerInfo = await publishRpcEvent("user.getInfo", {
+    userId: followerId,
+  });
+  const followingInfo = await publishRpcEvent("user.getInfo", {
+    userId: followingId,
+  });
+
+  const message = `${followerInfo.username} followed you`;
+
+  const notification = new Notification({
+    userId: followingId,
+    type: "follow",
+    message,
+    metadata: { followerId },
+  });
+  await notification.save();
+  logger.info(`Follow notification saved for ${followingId}`);
+
+  await sendEmail({
+    to: followingInfo.email,
+    subject: "You got a new follower!",
+    text: message,
+  });
+};
+
+module.exports = {
+  handleMentionNotification,
+  handleCommentNotification,
+  handlePostLikedNotification,
+  handlePostSharedNotification,
+  handleUserFollowed,
+};
