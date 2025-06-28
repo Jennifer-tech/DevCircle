@@ -20,6 +20,19 @@ DevCircle is built using a **microservice architecture**, where each service run
 
 ---
 
+## 📍 API Endpoints (Examples)
+
+| Service   | Method | Endpoint                              | Description                    |
+|-----------|--------|----------------------------------------|--------------------------------|
+| Auth      | POST   | `/api/auth/register`                  | Register new user              |
+| Post      | POST   | `/api/posts`                          | Create a post                  |
+| Comment   | POST   | `/api/comments`                       | Create a comment with @mention |
+| Follow    | POST   | `/api/follow`                         | Follow a user                  |
+| Like      | POST   | `/api/likes`                          | Like/unlike a post             |
+| Notify    | GET    | `/api/notifications/:userId`          | Get user notifications         |
+
+---
+
 ## Technologies Used
 
 - **Node.js + Express** – Server framework
