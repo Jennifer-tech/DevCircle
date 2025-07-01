@@ -1,6 +1,6 @@
 # DevCircle Project
 
-DevCircle is a microservice-based social platform built with Node.js, Express, MongoDB, Redis, and RabbitMQ. The platform allows users to register, create posts, like, comment, share posts, follow each other, and receive notifications.
+DevCircle is a microservice-based social platform built with Node.js, Express, MongoDB, Redis, and RabbitMQ. The platform allows users to register, create posts, like, comment, share posts, follow each other, and receive notifications and upload media to AWS S3 Bucket.
 
 ---
 
