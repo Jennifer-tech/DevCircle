@@ -1,6 +1,6 @@
-const { uploadMediaToCloudinary } = require('../utils/cloudinary')
 const logger = require('../utils/logger')
 const Media = require('../models/mediaModel')
+const { uploadMediaToS3 } = require('../utils/s3')
 
 const uploadMedia = async(req, res) => {
     logger.info('Starting media upload')
@@ -19,15 +19,15 @@ const uploadMedia = async(req, res) => {
         logger.info(`File details: ${originalname}, ${mimetype}`)
         logger.info('Uploading to cloudinary starting...')
 
-        const cloudinaryUploadResult = await uploadMediaToCloudinary(req.file)
+        const s3UploadResult = await uploadMediaToS3(req.file)
 
-        logger.info(`Cloudinary upload successfully. Public ID: ${cloudinaryUploadResult.public_id}`)
+        logger.info(`S3 upload successfully. Public ID: ${s3UploadResult.public_id}`)
 
         const newlyCreatedMedia = new Media({
-            publicId: cloudinaryUploadResult.public_id,
+            publicId: s3UploadResult.key,
             originalName: originalname,
             mimeType: mimetype,
-            url: cloudinaryUploadResult.secure_url,
+            url: s3UploadResult.url,
             userId
         })
 
@@ -50,7 +50,7 @@ const uploadMedia = async(req, res) => {
 
 const getAllMedias = async(req, res) => {
     try {
-        const results = await Media.find({})
+        const results = await Media.find({}).sort({ createdAt: -1 });
         res.json({
             success: true,
             results: results.length,

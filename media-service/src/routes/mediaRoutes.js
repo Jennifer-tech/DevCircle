@@ -1,47 +1,22 @@
-const express = require('express');
-const multer = require('multer');
-const { uploadMedia, getAllMedias } = require('../controllers/mediaController')
-const { authenticateRequest } = require('../middleware/authMiddleware');
-const logger = require('../utils/logger');
-const { createMediaLimiter } = require('../middleware/rateLimiter');
+const express = require("express");
+// const multerS3 = require("multer-s3");
+const multer = require("multer")
+// const AWS = require("aws-sdk");
+const { uploadMedia, getAllMedias } = require("../controllers/mediaController");
+const { authenticateRequest } = require("../middleware/authMiddleware");
+const logger = require("../utils/logger");
+const { createMediaLimiter } = require("../middleware/rateLimiter");
 
-const router = express.Router()
+const router = express.Router();
 
 const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB
-    }
-}).single('file')
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
+})
 
-router.post('/upload', authenticateRequest, (req, res, next) => {
-    upload(req, res, (err) => {
-        if(err instanceof multer.MulterError) {
-            logger.error(`Multer error while uploading:`, err)
-            return res.status(400).json({
-                message: 'Multer error while uploading:',
-                error: err.message,
-                stack: err.stack
-            })
-        } else if(err) {
-            logger.error(`Unknown error occured while uploading:`, err)
-            return res.status(500).json({
-                message: 'Unknown error occured while uploading:',
-                error: err.message,
-                stack: err.stack
-            })
-        }
+router.post("/upload", authenticateRequest, upload.single("file"), createMediaLimiter, uploadMedia)
 
-        if(!req.file){
-            return res.status(400).json({
-                message: 'No file found!',
-            })
-        }
+router.get("/all", authenticateRequest, getAllMedias);
 
-        next()
-    })
-}, createMediaLimiter, uploadMedia)
+module.exports = router;
 
-router.get('/all', authenticateRequest, getAllMedias)
-
-module.exports = router

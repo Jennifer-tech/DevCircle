@@ -4,7 +4,7 @@ const logger = require('./logger');
 let connection = null;
 let channel = null;
 
-const EXCHANGE_NAME = 'media_events'
+const EXCHANGE_NAME = 'post_events'
 
 async function connectToRabbitMQ(){
     try{
